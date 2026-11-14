@@ -421,3 +421,16 @@ html[data-dimread="off"] .card.read h3, html[data-dimread="off"] .card.read .ex 
   .utility, .sections, .mast-actions, .filters, .toolbar, .actions, .to-top, .foot, .side { display: none !important; }
   body { background: #fff; color: #000; }
 }
+
+/* 热词走势 */
+.trend { list-style: none; margin: 0; padding: 0; }
+.trend li + li { border-top: 1px solid var(--rule-2); }
+.trend button { display: grid; grid-template-columns: minmax(0, 1fr) 84px 44px; align-items: center; gap: 10px; width: 100%; border: 0; background: none; padding: 7px 0; text-align: left; color: var(--ink); font-size: 14px; }
+.trend button:hover .tw { color: var(--red); }
+.trend .tw { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.trend .spark { display: flex; align-items: flex-end; gap: 2px; height: 22px; }
+.trend .spark i { flex: 1; background: var(--rule); border-radius: 2px 2px 0 0; transform-origin: 50% 100%; animation: m-grow-y .5s cubic-bezier(.22,.8,.24,1) backwards; }
+.trend .spark i:last-child { background: var(--red); }
+.trend .tn { text-align: right; font-size: 12.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.trend .tn.up { color: var(--red); }
+@media (prefers-reduced-motion: reduce) { .trend .spark i { animation: none; } }

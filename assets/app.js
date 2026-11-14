@@ -480,6 +480,8 @@
     }).join("") + "</ul>" : '<p class="muted" style="font-size:13.5px;margin:0">在任意新闻下点“稍后读”，就会收进这里。</p>';
     html += "</div>";
 
+    html += trendBox();
+
     var st = S.index;
     var okSrc = st.sources.filter(function (s) { return s.ok; }).length;
     html += '<div class="side-box"><h3>本站概况</h3><div class="stat-row"><div><b>' + fmtNum(st.count) + "</b><span>条新闻</span></div><div><b>" + okSrc + "</b><span>个来源</span></div><div><b>" + fmtNum(st.clusters) + "</b><span>组多源报道</span></div></div>" +
@@ -684,6 +686,28 @@
       S.tab === "later" ? Object.keys(later).map(function (k) { return later[k]; }) : hist.slice();
     return arr.sort(function (a, b) { return (b._at || 0) - (a._at || 0); });
   }
+  function trendBox() {
+    var words = (S.index.hot || []).slice(0, 6).map(function (h) { return h.w; });
+    var days = (S.index.days || []).slice(0, 7).map(function (d) { return d.date; }).reverse();
+    if (!words.length || days.length < 2) return "";
+    var pos = {}; days.forEach(function (d, i) { pos[d] = i; });
+    var rows = words.map(function (w) { return { w: w, lw: w.toLowerCase(), c: days.map(function () { return 0; }) }; });
+    S.items.forEach(function (it) {
+      var i = pos[dayKey(ts(it))];
+      if (i == null) return;
+      var t = ((it.title_zh || "") + " " + it.title).toLowerCase();
+      rows.forEach(function (r) { if (t.indexOf(r.lw) >= 0) r.c[i]++; });
+    });
+    var html = '<div class="side-box"><h3>热词走势<span class="muted" style="font-family:var(--sans);font-size:12px;letter-spacing:0;margin-left:auto">近 ' + days.length + " 天</span></h3><ul class=\"trend\">";
+    rows.forEach(function (r) {
+      var max = Math.max.apply(null, r.c) || 1, last = r.c[r.c.length - 1], prev = r.c[r.c.length - 2];
+      var dir = last > prev ? "up" : last < prev ? "down" : "flat";
+      html += '<li><button type="button" data-q="' + attr(r.w) + '" title="搜索「' + attr(r.w) + '」"><span class="tw">' + esc(r.w) + '</span><span class="spark" aria-hidden="true">' +
+        r.c.map(function (n, i) { return '<i style="height:' + Math.max(8, Math.round(n / max * 100)) + '%" title="' + days[i].slice(5) + "：" + n + ' 条"></i>'; }).join("") +
+        '</span><span class="tn ' + dir + '">' + last + (dir === "up" ? " ↑" : dir === "down" ? " ↓" : "") + "</span></button></li>";
+    });
+    return html + "</ul></div>";
+  }
   function renderMine() {
     var el = $("#view-mine");
     var tabs = [["saved", "收藏", Object.keys(saved).length], ["later", "稍后读", Object.keys(later).length], ["hist", "浏览记录", hist.length]];
@@ -691,7 +715,7 @@
       return '<button data-tab="' + t[0] + '" aria-pressed="' + (S.tab === t[0]) + '">' + t[1] + '<span class="n">' + t[2] + "</span></button>";
     }).join("") + "</div>";
     var arr = mineList();
-    html += '<div class="mine-tools">' + (arr.length ? '<button class="btn" data-act="export-list">复制为文本</button><button class="btn danger" data-act="clear-list">清空</button>' : "") + "</div>";
+    html += '<div class="mine-tools">' + (arr.length ? '<button class="btn" data-act="export-list">复制为文本</button><button class="btn" data-act="export-md">导出 Markdown</button><button class="btn danger" data-act="clear-list">清空</button>' : "") + "</div>";
     if (!arr.length) {
       html += '<div class="empty"><h3>' + { saved: "还没有收藏", later: "稍后读是空的", hist: "还没有浏览记录" }[S.tab] + "</h3><p>" +
         { saved: "点新闻下方的“收藏”，就会长期保存在这台设备上。", later: "看到想读的新闻，点“稍后读”先放这里，打开后会自动移出。", hist: "在本站点开的新闻会记在这里，方便找回。" }[S.tab] + "</p></div>";
@@ -970,6 +994,17 @@
       case "export-list":
         var arr = mineList();
         copyText(arr.map(function (x) { return "· " + (x.title_zh || x.title) + "\n  " + srcName(x.src) + "  " + x.url; }).join("\n"), "已复制 " + arr.length + " 条");
+        break;
+      case "export-md":
+        var arr2 = mineList(), name = { saved: "收藏", later: "稍后读", hist: "浏览记录" }[S.tab];
+        var md = "# 朝闻 · " + name + "\n\n导出于 " + new Date().toLocaleString("zh-CN", { hour12: false }) + "，共 " + arr2.length + " 条\n\n" +
+          arr2.map(function (x) { return "- [" + (x.title_zh || x.title).replace(/[\[\]]/g, "") + "](" + x.url + ")  \n  " + srcName(x.src) + (x.time ? " · " + absTime(ts(x)) : ""); }).join("\n") + "\n";
+        var bl = new Blob([md], { type: "text/markdown;charset=utf-8" });
+        var a2 = document.createElement("a");
+        a2.href = URL.createObjectURL(bl); a2.download = "朝闻-" + name + "-" + dayKey(Date.now()) + ".md";
+        document.body.appendChild(a2); a2.click(); a2.remove();
+        setTimeout(function () { URL.revokeObjectURL(a2.href); }, 2000);
+        toast("已导出 " + arr2.length + " 条");
         break;
       case "clear-list":
         if (!confirm("确定清空？")) return;
