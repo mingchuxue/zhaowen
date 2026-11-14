@@ -133,6 +133,7 @@ def excerpt_of(s: str, title: str = "", n: int = EXCERPT_LEN) -> str:
     s = fix_mojibake(strip_html(s))
     s = re.sub(r"\s*(Continue reading\.*|Read more\.*|阅读全文|\[…\]|\[\.\.\.\])\s*$", "", s, flags=re.I)
     s = re.sub(r"The post .+? appeared first on .+?\.\s*$", "", s)
+    s = re.sub(r"^(This|The) (live )?blog is (now )?closed\.?[^.]*?(\.|$)\s*((You can )?(read|follow|find)[^.]*\.\s*)?", "", s, flags=re.I)
     if not s or EXCERPT_JUNK.match(s):
         return ""
     if title:
