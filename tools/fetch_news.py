@@ -37,8 +37,8 @@ GN_WHEN = os.environ.get("GN_WHEN", "1d")
 EXCERPT_LEN = 160
 X_TITLE_LEN = 90
 TIME_BUDGET = float(os.environ.get("TIME_BUDGET", "1500"))
-MAX_DECODE = int(os.environ.get("MAX_DECODE", "500"))
-MAX_TRANSLATE = int(os.environ.get("MAX_TRANSLATE", "1600"))
+MAX_DECODE = int(os.environ.get("MAX_DECODE", "1500"))
+MAX_TRANSLATE = int(os.environ.get("MAX_TRANSLATE", "3000"))
 T0 = time.time()
 
 UA = (
