@@ -309,6 +309,7 @@ def entry_summary(e) -> str:
     return ""
 
 
+IMG_BLOCKED_HOSTS = ("japantimes.co.jp",)  # images refuse to load on other sites
 IMG_RE = re.compile(r"""<img[^>]+src=["']([^"']+)["']""", re.I)
 
 
@@ -350,6 +351,8 @@ def entry_image(e) -> str:
     if not url.startswith("http"):
         return ""
     if re.search(r"(feedburner|pixel|tracking|1x1|spacer|blank\.gif|emoji|gravatar|avatar)", url, re.I):
+        return ""
+    if any(h in url for h in IMG_BLOCKED_HOSTS):
         return ""
     url = re.sub(r"(ichef\.bbci\.co\.uk/(?:ace/(?:standard|ws)|news))/\d+/", r"\1/480/", url)
     return url
@@ -900,12 +903,65 @@ def sig_tokens(it: dict) -> list:
             if CJK_RE.search(seg):
                 chars = [c for c in seg]
                 toks += ["".join(chars[i:i + 2]) for i in range(len(chars) - 1)]
-            elif len(seg) >= 2:
-                toks.append(seg.lower())
+            elif len(seg) >= 2 and seg.lower() not in EN_STOP:
+                toks.append("e:" + seg.lower())
     if it["lang"] != "zh":
         words = [w for w in PUNCT_RE.sub(" ", it["title"].lower()).split() if w not in EN_STOP and len(w) > 2]
         toks += ["e:" + w for w in words]
     return toks
+
+
+MERGE_SIM = 0.34
+
+
+def merge_groups(groups: list, toks: list, idf: dict, times: list) -> list:
+    """Join groups whose combined wording is close, e.g. a Chinese and an English write-up."""
+    big = [g for g in groups if len(g) >= 2]
+    small = [g for g in groups if len(g) < 2]
+    if len(big) < 2:
+        return groups
+    vecs, norms, spans = [], [], []
+    for g in big:
+        c = Counter()
+        for i in g:
+            c.update(toks[i])
+        v = {t: idf[t] * (n / len(g)) for t, n in c.items() if n / len(g) >= 0.34}
+        vecs.append(v)
+        norms.append(math.sqrt(sum(x * x for x in v.values())) or 1.0)
+        spans.append((min(times[i] for i in g), max(times[i] for i in g)))
+    inv = defaultdict(list)
+    for k, v in enumerate(vecs):
+        for t in v:
+            inv[t].append(k)
+    parent = list(range(len(big)))
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for a, va in enumerate(vecs):
+        cand = Counter()
+        for t in va:
+            if len(inv[t]) > 40:
+                continue
+            for b in inv[t]:
+                if b > a:
+                    cand[b] += 1
+        for b, c in cand.items():
+            if c < 3:
+                continue
+            if spans[b][0] - spans[a][1] > 36 * 3600 or spans[a][0] - spans[b][1] > 36 * 3600:
+                continue
+            vb = vecs[b]
+            dot = sum(w * vb[t] for t, w in va.items() if t in vb)
+            if dot / (norms[a] * norms[b]) >= MERGE_SIM:
+                parent[find(a)] = find(b)
+    joined = defaultdict(list)
+    for k, g in enumerate(big):
+        joined[find(k)].extend(g)
+    return list(joined.values()) + small
 
 
 def cluster(items: list) -> None:
@@ -961,7 +1017,8 @@ def cluster(items: list) -> None:
         return 2 * w / (weight[a] + weight[b])
 
     final = []
-    for members in groups.values():
+    groups = merge_groups(list(groups.values()), toks, idf, times)
+    for members in groups:
         while len(members) > 2:
             sample = members[:80]
             medoid = max(sample, key=lambda a: sum(dice(a, b) for b in sample if b != a))

@@ -1195,7 +1195,7 @@
       if (tag === "input" || tag === "textarea" || tag === "select" || e.target.isContentEditable) return;
       if ($("#dlg").open) return;
       var k = e.key;
-      if (k === "/") { e.preventDefault(); $(".search").classList.add("open"); $("#q").focus(); return; }
+      if (k === "/") { e.preventDefault(); setSearchOpen(true); return; }
       if (k === "?") { openDlg("快捷键", kbdTable()); return; }
       if (k === "g") { gAt = Date.now(); return; }
       if (k === "h" && Date.now() - gAt < 900) { goSection("home"); return; }
@@ -1256,13 +1256,18 @@
     });
     $("#close-notice").addEventListener("click", function () { el.hidden = true; });
   }
+  function setSearchOpen(on, noFocus) {
+    $(".search").classList.toggle("open", on);
+    $(".masthead").classList.toggle("searching", on);
+    if (on && !noFocus) $("#q").focus();
+  }
   function mobileSearch() {
     var btn = document.createElement("button");
     btn.className = "icon-btn only-mobile"; btn.type = "button"; btn.setAttribute("aria-label", "搜索");
     btn.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg>';
-    btn.addEventListener("click", function () { var s = $(".search"); s.classList.toggle("open"); if (s.classList.contains("open")) $("#q").focus(); });
+    btn.addEventListener("click", function () { setSearchOpen(!$(".search").classList.contains("open")); });
     $(".mast-actions").insertBefore(btn, $("#btn-theme"));
-    if (S.q) $(".search").classList.add("open");
+    if (S.q) setSearchOpen(true, true);
   }
 
   // ------------------------------------------------------------ boot

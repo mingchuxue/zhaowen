@@ -374,7 +374,8 @@ html[data-dimread="off"] .card.read h3, html[data-dimread="off"] .card.read .ex 
   .brand { grid-column: 1; }
   .motto { display: none; }
   .mast-actions { grid-column: 2; }
-  .search { position: absolute; left: 16px; right: 16px; top: 100%; width: auto; z-index: 31; display: none; }
+  .search { position: absolute; left: 16px; right: 16px; bottom: 10px; width: auto; z-index: 31; display: none; }
+  .masthead.searching { padding-bottom: 50px; }
   .search.open { display: flex; }
   .masthead { position: relative; }
   .wordmark { font-size: 34px; }
