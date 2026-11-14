@@ -84,7 +84,7 @@ jobs:
         run: |
           mkdir -p _site
           cp -r index.html manifest.webmanifest sw.js assets data .nojekyll _site/
-          cp status.json _site/ 2>/dev/null || true
+          cp data/status.json _site/status.json 2>/dev/null || cp status.json _site/ 2>/dev/null || true
 
       - name: Upload site
         uses: actions/upload-pages-artifact@v3

@@ -1345,7 +1345,9 @@ def main() -> int:
         "sources_ok": sum(1 for s in sources if s["ok"]), "sources": len(sources),
         "failed": [s["name"] for s in sources if not s["ok"]],
     }
-    (ROOT / "status.json").write_text(json.dumps(status, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    text = json.dumps(status, ensure_ascii=False, indent=2) + "\n"
+    (ROOT / "status.json").write_text(text, encoding="utf-8")
+    (ROOT / "data" / "status.json").write_text(text, encoding="utf-8")
     ok = sum(1 for s in sources if s["ok"])
     log("完成：来源 %d/%d 可用，共 %d 条，%d 组多源报道，用时 %.0f 秒" % (ok, len(sources), len(items), clusters, elapsed()))
     log("热词：" + "、".join(h["w"] for h in hot[:15]))
