@@ -26,6 +26,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 30
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -64,11 +66,17 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          last=$(git log -1 --format=%ct -- status.json || echo 0)
+          if [ $(( $(date +%s) - ${last:-0} )) -lt 72000 ]; then
+            echo "今日已记录"
+            exit 0
+          fi
           git add status.json
           if git diff --staged --quiet; then
             echo "状态未变"
           else
             git commit -m "更新新闻 $(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')"
+            git pull --rebase -q || true
             git push || echo "推送状态失败，下次再试"
           fi
 
