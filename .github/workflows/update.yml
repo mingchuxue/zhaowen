@@ -1,0 +1,95 @@
+name: 更新新闻并发布
+
+on:
+  schedule:
+    - cron: "10 */2 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: update-news
+  cancel-in-progress: false
+
+env:
+  SITE_URL: https://mingchuxue.github.io/zhaowen/
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: tools/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r tools/requirements.txt
+
+      - name: Restore previous data
+        uses: actions/cache/restore@v4
+        with:
+          path: data
+          key: news-data-${{ github.run_id }}
+          restore-keys: news-data-
+
+      - name: Fetch news
+        if: github.event_name != 'push'
+        run: python tools/fetch_news.py
+
+      - name: Reuse published data
+        if: github.event_name == 'push'
+        run: python tools/fetch_news.py --bootstrap-only || python tools/fetch_news.py
+
+      - name: Save data
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data
+          key: news-data-${{ github.run_id }}
+
+      - name: Record status
+        if: github.event_name != 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add status.json
+          if git diff --staged --quiet; then
+            echo "状态未变"
+          else
+            git commit -m "更新新闻 $(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')"
+            git push || echo "推送状态失败，下次再试"
+          fi
+
+      - name: Prepare site
+        run: |
+          mkdir -p _site
+          cp -r index.html manifest.webmanifest sw.js assets data .nojekyll _site/
+          cp status.json _site/ 2>/dev/null || true
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
