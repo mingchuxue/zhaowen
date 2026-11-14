@@ -1,6 +1,6 @@
-var SHELL = "zhaowen-shell-v3";
+var SHELL = "zhaowen-shell-v4";
 var DATA = "zhaowen-data-v1";
-var ASSETS = ["./", "index.html", "assets/style.css", "assets/app.js", "assets/icon.svg", "assets/icon-192.png", "manifest.webmanifest"];
+var ASSETS = ["./", "index.html", "assets/style.css", "assets/motion.css", "assets/motion.js", "assets/app.js", "assets/icon.svg", "assets/icon-192.png", "manifest.webmanifest"];
 
 self.addEventListener("install", function (e) {
   e.waitUntil(caches.open(SHELL).then(function (c) { return c.addAll(ASSETS); }).then(function () { return self.skipWaiting(); }));

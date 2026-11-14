@@ -339,11 +339,13 @@
   }
   function skeleton() {
     var s = "";
-    for (var i = 0; i < 6; i++) s += '<div class="skeleton sk-line" style="width:' + (90 - i * 9) + '%"></div>';
-    return '<div style="padding:12px 0">' + s + "</div>";
+    for (var i = 0; i < 5; i++) {
+      s += '<div class="sk-card" aria-hidden="true"><div><div class="skeleton sk-meta"></div><div class="skeleton sk-line sk-title" style="width:' + (92 - i * 7) + '%"></div>' +
+        '<div class="skeleton sk-line" style="width:' + (80 - i * 5) + '%"></div><div class="skeleton sk-line" style="width:' + (56 + i * 6) + '%"></div></div><div class="skeleton sk-img"></div></div>';
+    }
+    return '<div style="padding:4px 0">' + s + "</div>";
   }
 
-  // ------------------------------------------------------------ sections nav
   function currentSec() {
     if (S.view === "home") return "home";
     if (S.view !== "list") return S.view;
@@ -441,7 +443,7 @@
       var withImg = prefs.images ? list.filter(function (g) { return g.it.img; })[0] : null;
       if (withImg && withImg !== list[0] && list.indexOf(withImg) < 3) { list.splice(list.indexOf(withImg), 1); list.unshift(withImg); }
       var top = list[0];
-      html += '<section class="sec-block"><h4>' + name + '<button data-sec="' + c + '">更多 →</button></h4>' +
+      html += '<section class="sec-block" data-k="' + c + '"><h4>' + name + '<button data-sec="' + c + '">更多 →</button></h4>' +
         '<div class="sec-top">' + imgTag(top.it) +
         '<h5><a href="' + attr(top.it.url) + '" target="_blank" rel="noopener" data-open="' + top.it.id + '">' + esc(titleOf(top.it)) + "</a></h5>" + metaHtml(top.it, top, { brief: true }) + "</div>" +
         '<ul class="sec-list">' + list.slice(1).map(function (g) {
