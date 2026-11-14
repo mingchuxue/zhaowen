@@ -1,4 +1,4 @@
-var SHELL = "zhaowen-shell-v2";
+var SHELL = "zhaowen-shell-v3";
 var DATA = "zhaowen-data-v1";
 var ASSETS = ["./", "index.html", "assets/style.css", "assets/app.js", "assets/icon.svg", "assets/icon-192.png", "manifest.webmanifest"];
 

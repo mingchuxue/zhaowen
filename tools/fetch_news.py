@@ -309,7 +309,7 @@ def entry_summary(e) -> str:
     return ""
 
 
-IMG_BLOCKED_HOSTS = ("japantimes.co.jp",)  # images refuse to load on other sites
+IMG_BLOCKED_HOSTS = ("japantimes.co.jp", "i.cbc.ca", "youtube.com/embed", "youtube-nocookie.com")  # images refuse to load on other sites
 IMG_RE = re.compile(r"""<img[^>]+src=["']([^"']+)["']""", re.I)
 
 

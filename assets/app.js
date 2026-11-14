@@ -2,7 +2,7 @@
   "use strict";
 
   // ------------------------------------------------------------ constants
-  var NOIMG = /japantimes\.co\.jp/;
+  var NOIMG = /japantimes\.co\.jp|i\.cbc\.ca|youtube(-nocookie)?\.com\/embed/;
   var DATA = "data/";
   var CAT_ORDER = ["china", "world", "finance", "tech", "society", "sports", "ent", "health", "science", "military", "auto", "edu", "culture"];
   var HOME_SECTIONS = ["china", "world", "finance", "tech", "society", "sports", "ent", "health", "science", "military", "auto", "edu"];
