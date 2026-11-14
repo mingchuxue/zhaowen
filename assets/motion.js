@@ -20,6 +20,7 @@
 
   /* ---------- 选项指示条 ---------- */
   function activeOf(host, t) {
+    if (t.deep) return host.querySelector(t.item + t.active);
     var kids = arr(host.children);
     for (var i = 0; i < kids.length; i++) {
       var k = kids[i];
@@ -33,8 +34,14 @@
   function probe(host, act, t) {
     host.classList.add("m-probe");
     host.classList.remove("m-ind-host");
+    var deep = host.classList.contains("m-deep-host");
+    if (deep) host.classList.remove("m-deep-host");
     var s = {};
-    if (t.mode === "line") {
+    if (t.mode === "bar") {
+      s.bg = getComputedStyle(act).color;
+      s.h = t.h || 3;
+      s.radius = "3px";
+    } else if (t.mode === "line") {
       var p = getComputedStyle(act, t.pseudo || "::after");
       s.bg = p.backgroundColor;
       if (!s.bg || s.bg === "rgba(0, 0, 0, 0)") s.bg = p.borderBottomColor;
@@ -54,6 +61,7 @@
       s.bs = c.borderTopStyle;
     }
     host.classList.add("m-ind-host");
+    if (deep) host.classList.add("m-deep-host");
     void host.offsetWidth;
     host.classList.remove("m-probe");
     return s;
@@ -65,7 +73,7 @@
     var ind = host._mInd;
     if (!ind || ind.parentNode !== host) {
       ind = document.createElement("span");
-      ind.className = "m-ind" + (t.mode === "line" ? " m-ind-line" : "");
+      ind.className = "m-ind" + (t.mode === "line" || t.mode === "bar" ? " m-ind-line" : "");
       ind.setAttribute("aria-hidden", "true");
       host.insertBefore(ind, host.firstChild);
       host._mInd = ind;
@@ -74,6 +82,7 @@
       if (getComputedStyle(host).position === "static") host.classList.add("m-rel");
       host.classList.add("m-ind-host");
       if (t.mode === "line") host.classList.add("m-line-host");
+      if (t.deep) host.classList.add("m-deep-host");
       if (sizeObs) sizeObs.observe(host);
     }
     if (!act || !act.offsetWidth) {
@@ -89,17 +98,25 @@
       var s = host._mStyle;
       ind.style.backgroundColor = s.bg;
       ind.style.borderRadius = s.radius;
-      if (t.mode !== "line") {
+      if (t.mode !== "line" && t.mode !== "bar") {
         ind.style.boxShadow = s.shadow && s.shadow !== "none" ? s.shadow : "";
         ind.style.border = parseFloat(s.bw) > 0 && s.bs !== "none" ? s.bw + " " + s.bs + " " + s.bc : "0";
       }
     }
     var s2 = host._mStyle;
-    var g;
-    if (t.mode === "line") {
-      g = { x: act.offsetLeft + s2.l, y: act.offsetTop + act.offsetHeight - s2.b - s2.h, w: Math.max(4, act.offsetWidth - s2.l - s2.r), h: s2.h };
+    var g, ox = act.offsetLeft, oy = act.offsetTop;
+    if (act.offsetParent !== host) {
+      var ra = act.getBoundingClientRect(), rh = host.getBoundingClientRect();
+      ox = Math.round(ra.left - rh.left - host.clientLeft + host.scrollLeft);
+      oy = Math.round(ra.top - rh.top - host.clientTop + host.scrollTop);
+    }
+    if (t.mode === "bar") {
+      var bw = t.w || 20;
+      g = { x: ox + (act.offsetWidth - bw) / 2, y: t.pos === "bottom" ? oy + act.offsetHeight - s2.h : oy + (t.top || 0), w: bw, h: s2.h };
+    } else if (t.mode === "line") {
+      g = { x: ox + s2.l, y: oy + act.offsetHeight - s2.b - s2.h, w: Math.max(4, act.offsetWidth - s2.l - s2.r), h: s2.h };
     } else {
-      g = { x: act.offsetLeft, y: act.offsetTop, w: act.offsetWidth, h: act.offsetHeight };
+      g = { x: ox, y: oy, w: act.offsetWidth, h: act.offsetHeight };
     }
     var prev = host._mGeo;
     if (prev && ind._mPlaced && prev.x === g.x && prev.y === g.y && prev.w === g.w && prev.h === g.h && ind.style.opacity === "1") return;
@@ -122,10 +139,12 @@
     ind.style.height = g.h + "px";
   }
 
+  function scope() { try { return cfg.scope ? cfg.scope() : ""; } catch (e) { return ""; } }
+
   function scanTabs() {
     (cfg.tabs || []).forEach(function (t, ti) {
       arr(document.querySelectorAll(t.host)).forEach(function (host, hi) {
-        placeTab(host, t, ti + ":" + (host.id || hi));
+        placeTab(host, t, scope() + ":" + ti + ":" + (host.id || hi));
       });
     });
   }
@@ -139,6 +158,7 @@
     cfg.lists.forEach(function (l) {
       if (!l.key) return;
       each(l.sel, function (c) {
+        if (!c.offsetParent && getComputedStyle(c).position !== "fixed") return;
         arr(c.querySelectorAll(l.item)).some(function (el) {
           var r = el.getBoundingClientRect();
           if (r.bottom < -40) return false;
@@ -189,6 +209,18 @@
     if (fresh) rectCache = null;
   }
 
+  var pageArmed = true;
+  function runPage() {
+    if (!cfg.page || !pageArmed) return;
+    var c = document.querySelector(cfg.page);
+    if (!c || !c.children.length) return;
+    pageArmed = false;
+    if (still()) return;
+    arr(c.children).slice(0, cfg.pageCap || 8).forEach(function (el, i) {
+      el.animate([{ opacity: 0, translate: "0 10px" }, { opacity: 1, translate: "0 0" }], { duration: 300, delay: i * 40, easing: EASE, fill: "backwards" });
+    });
+  }
+
   /* ---------- 视图切换 ---------- */
   function shown(el) {
     if (el.hidden) return false;
@@ -213,7 +245,7 @@
   }
 
   /* ---------- 数字滚动 ---------- */
-  var NUM = /\d[\d,]*(\.\d+)?/g;
+  var NUM = /\d[\d,]*(?:\.\d+)?/g;
   function runCounters() {
     if (!cfg.counters) return;
     each(cfg.counters, function (el) {
@@ -225,11 +257,45 @@
       countOne(el);
     });
   }
-  function countOne(el) {
+  function runCountUp() {
+    if (!cfg.countUp) return;
+    each(cfg.countUp, function (el) {
+      if (numBusy.has(el) || el.children.length) return;
+      var r = el.getBoundingClientRect();
+      var vis = r.width > 0 && r.bottom > 0 && r.top < innerHeight;
+      var was = el._mVis;
+      el._mVis = vis;
+      if (!vis || was) return;
+      var txt = el.textContent;
+      NUM.lastIndex = 0;
+      if (!NUM.test(txt)) return;
+      NUM.lastIndex = 0;
+      numState.set(el, txt.replace(NUM, "0"));
+      countOne(el, true);
+    });
+  }
+
+  var growMemo = new Map();
+  function runGrow() {
+    if (!cfg.grow) return;
+    arr(document.querySelectorAll(cfg.grow)).forEach(function (el, i) {
+      if (el._mGrown) return;
+      el._mGrown = true;
+      var w = el.style.width;
+      if (!w || w.indexOf("%") < 0) return;
+      var k = scope() + ":" + i, prev = growMemo.get(k);
+      growMemo.set(k, w);
+      if (still() || prev === w) return;
+      el.animate([{ width: prev || "0%" }, { width: w }], { duration: 520, easing: EASE });
+    });
+  }
+
+  function countOne(el, force) {
     if (numBusy.has(el)) return;
     var txt = el.textContent, old = numState.get(el);
     numState.set(el, txt);
     if (old == null || old === txt || still()) return;
+    if (!force && cfg.countUp && el.matches && el.matches(cfg.countUp) && !el._mVis) return;
     var a = old.match(NUM), b = txt.match(NUM);
     if (!a || !b || a.length !== b.length) return;
     if (old.replace(NUM, "#") !== txt.replace(NUM, "#")) return;
@@ -297,6 +363,7 @@
       if (/^data-/.test(a.name) && a.value.length < 80) { sel += "[" + a.name + '="' + a.value.replace(/["\\]/g, "\\$&") + '"]'; n++; }
     });
     if (!n && el.id) sel = "#" + CSS.escape(el.id);
+    else if (!n && el.tagName === "A" && el.getAttribute("href") && el.getAttribute("href").length < 160) sel = 'a[href="' + el.getAttribute("href").replace(/["\\]/g, "\\$&") + '"]';
     else if (!n) return null;
     return sel;
   }
@@ -331,8 +398,11 @@
     queued = false;
     try { scanTabs(); } catch (e) {}
     try { runViews(); } catch (e) {}
+    try { runPage(); } catch (e) {}
     try { runLists(); } catch (e) {}
     try { runCounters(); } catch (e) {}
+    try { runCountUp(); } catch (e) {}
+    try { runGrow(); } catch (e) {}
     themeDirty = false;
   }
   function schedule() {
@@ -368,8 +438,14 @@
     document.addEventListener("pointerup", onUp, true);
     document.addEventListener("pointercancel", onUp, true);
     document.addEventListener("click", onClick, true);
-    document.addEventListener("keydown", function (e) { if (!e.repeat) cacheRects(); }, true);
-    addEventListener("hashchange", cacheRects, true);
+    if (cfg.keyCache !== false) document.addEventListener("keydown", function (e) { if (!e.repeat && !/^(INPUT|TEXTAREA)$/.test(e.target.tagName || "")) cacheRects(); }, true);
+    addEventListener("hashchange", function () {
+      if (cfg.routeReset) { listKeys.clear(); rectCache = null; } else cacheRects();
+      pageArmed = true;
+      schedule();
+    }, true);
+    document.addEventListener("change", cacheRects, true);
+    document.addEventListener("input", function (e) { if (e.target && e.target.type === "search") cacheRects(); }, true);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
     if (cfg.views) each(cfg.views, function (v) { viewState.set(v, shown(v)); });
     schedule();
