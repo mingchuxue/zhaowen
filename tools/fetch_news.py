@@ -1279,6 +1279,8 @@ def main() -> int:
 
     for it in items:
         tag(it, by_src[it["src"]])
+        if it.get("img") and any(h in it["img"] for h in IMG_BLOCKED_HOSTS):
+            it["img"] = ""
     cluster(items)
     try:
         enrich_images(items)

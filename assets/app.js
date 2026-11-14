@@ -2,6 +2,7 @@
   "use strict";
 
   // ------------------------------------------------------------ constants
+  var NOIMG = /japantimes\.co\.jp/;
   var DATA = "data/";
   var CAT_ORDER = ["china", "world", "finance", "tech", "society", "sports", "ent", "health", "science", "military", "auto", "edu", "culture"];
   var HOME_SECTIONS = ["china", "world", "finance", "tech", "society", "sports", "ent", "health", "science", "military", "auto", "edu"];
@@ -132,6 +133,7 @@
     S.loading[d] = fetchJSON(DATA + "day/" + d + ".json?v=" + v).then(function (j) {
       (j.items || []).forEach(function (it) {
         if (S.byId[it.id]) return;
+        if (it.img && NOIMG.test(it.img)) it.img = "";
         S.byId[it.id] = it; S.items.push(it);
       });
       S.loaded[d] = true;
