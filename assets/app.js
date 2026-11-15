@@ -201,13 +201,16 @@
     return true;
   }
   function hl(text, pq) {
-    var out = esc(text);
-    if (!pq || !pq.inc.length) return out;
-    pq.inc.forEach(function (w) {
-      var re = new RegExp("(" + esc(w).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "ig");
-      out = out.replace(re, "<mark>$1</mark>");
-    });
-    return out;
+    text = text == null ? "" : String(text);
+    var words = pq && pq.inc.length ? pq.inc : null, cls = "";
+    if (!words) {
+      words = follow.filter(function (w) { return w.indexOf("topic:") !== 0 && w.trim().length >= 2; });
+      cls = ' class="fw"';
+    }
+    words = words.filter(Boolean).slice().sort(function (a, b) { return b.length - a.length; });
+    if (!words.length) return esc(text);
+    var re = new RegExp("(" + words.map(function (w) { return w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }).join("|") + ")", "ig");
+    return text.split(re).map(function (p, i) { return i % 2 ? "<mark" + cls + ">" + esc(p) + "</mark>" : esc(p); }).join("");
   }
 
   // ------------------------------------------------------------ filtering
@@ -775,7 +778,7 @@
       '<div class="set-row"><span>显示配图</span><input type="checkbox" class="switch" data-pref-bool="images"' + (prefs.images ? " checked" : "") + "></div>" +
       '<div class="set-row"><span>已读新闻变淡</span><input type="checkbox" class="switch" data-pref-bool="dimRead"' + (prefs.dimRead ? " checked" : "") + "></div>" +
       '<div class="set-row"><span>合并同一事件<small>多家来源报道同一件事时只显示一条</small></span><input type="checkbox" class="switch" data-pref-bool="group"' + (prefs.group ? " checked" : "") + "></div>" +
-      "<h3>关注</h3><p>含有这些词或属于这些话题的新闻，会出现在“关注”栏目和首页右侧。</p>" + wordEditor("follow", follow, "输入关键词，如：高考、航天") +
+      "<h3>关注</h3><p>含有这些词或属于这些话题的新闻，会出现在“关注”栏目和首页右侧，标题中的关注词也会标出。</p>" + wordEditor("follow", follow, "输入关键词，如：高考、航天") +
       '<div class="chips" style="margin-top:4px">' + topics.map(function (t) {
         var on = follow.indexOf("topic:" + t.id) >= 0;
         return '<button class="chip" data-follow-topic="' + t.id + '" aria-pressed="' + on + '">#' + esc(t.name) + "</button>";
