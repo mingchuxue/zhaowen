@@ -751,23 +751,50 @@
   }
 
   // ------------------------------------------------------------ sources
+  function srcHealth() {
+    var now = S.now || Date.now(), keys = [], idx = {}, i, out = {};
+    for (i = 6; i >= 0; i--) { var k = dayKey(now - i * 86400000); idx[k] = keys.length; keys.push(k); }
+    S.items.forEach(function (it) {
+      var t = ts(it), o = out[it.src] || (out[it.src] = { last: 0, days: [0, 0, 0, 0, 0, 0, 0] });
+      if (t > o.last) o.last = t;
+      var j = idx[dayKey(t)];
+      if (j !== undefined) o.days[j]++;
+    });
+    return out;
+  }
   function renderSources() {
     var el = $("#view-sources");
     var st = S.index, tx = st.taxonomy;
+    if (!allLoaded() && !S.srcLoading) {
+      S.srcLoading = true;
+      loadAll().then(function () { S.srcLoading = false; if (S.view === "sources") renderSources(); });
+    }
+    var hs = srcHealth(), now = S.now || Date.now();
+    var health = function (s) {
+      var h = hs[s.id];
+      if (!s.ok) return ["bad", "本次未更新"];
+      if (h && h.last && now - h.last > 48 * 3600000) return ["warn", "近两天无新稿"];
+      return ["", "正常"];
+    };
     var ok = st.sources.filter(function (s) { return s.ok; }).length;
     var zh = st.sources.filter(function (s) { return s.lang === "zh"; }).length;
-    var html = '<div class="list-head"><div class="list-title"><h1>来源一览</h1><p class="muted">每条新闻都标明出处，点来源名可只看它的报道。</p></div></div>';
-    html += '<div class="src-sum"><div><b>' + st.sources.length + "</b><span>收录来源</span></div><div><b>" + ok + "</b><span>本次更新正常</span></div><div><b>" + zh + "</b><span>中文来源</span></div><div><b>" + (st.sources.length - zh) + "</b><span>外文来源（附译文）</span></div></div>";
+    var fresh = st.sources.filter(function (s) { var h = hs[s.id]; return h && now - h.last < 86400000; }).length;
+    var html = '<div class="list-head"><div class="list-title"><h1>来源一览</h1><p class="muted">每条新闻都标明出处，点来源名可只看它的报道。下表同时列出各来源最近一条的时间和近 7 天的发稿量。</p></div></div>';
+    html += '<div class="src-sum"><div><b>' + st.sources.length + "</b><span>收录来源</span></div><div><b>" + ok + "</b><span>本次更新正常</span></div><div><b>" + fresh + "</b><span>24 小时内有新稿</span></div><div><b>" + zh + "</b><span>中文来源</span></div><div><b>" + (st.sources.length - zh) + "</b><span>外文来源（附译文）</span></div></div>";
     html += '<div class="src-groups">' + [{ id: "", name: "全部" }].concat(tx.stypes).map(function (t) {
       return '<button class="chip" data-stype="' + t.id + '" aria-pressed="' + ((S.stypeView || "") === t.id) + '">' + t.name + "</button>";
     }).join("") + "</div>";
     var list = st.sources.filter(function (s) { return !S.stypeView || s.stype === S.stypeView; });
     list.sort(function (a, b) { return b.count - a.count; });
-    html += '<table class="src-table"><thead><tr><th>来源</th><th class="hide-m">类型</th><th class="hide-m">语言</th><th>状态</th><th style="text-align:right">收录</th><th></th></tr></thead><tbody>' + list.map(function (s) {
-      var isBlocked = blockSrc.indexOf(s.id) >= 0;
+    html += '<table class="src-table"><thead><tr><th>来源</th><th class="hide-m">类型</th><th class="hide-m">最近一条</th><th class="hide-m">近 7 天</th><th>状态</th><th style="text-align:right">收录</th><th></th></tr></thead><tbody>' + list.map(function (s) {
+      var isBlocked = blockSrc.indexOf(s.id) >= 0, h = hs[s.id], hv = health(s);
+      var mx = h ? Math.max.apply(null, h.days) || 1 : 1;
+      var spark = h ? '<span class="src-spark" title="近 7 天：' + h.days.join(" / ") + '">' + h.days.map(function (n) { return '<i style="height:' + (n ? Math.max(12, Math.round(n / mx * 100)) : 6) + '%"' + (n ? "" : ' class="z"') + "></i>"; }).join("") + "</span>" : '<span class="muted">—</span>';
       return '<tr><td><a href="#" data-src="' + s.id + '"><b>' + esc(s.name) + '</b></a><br><a class="muted" style="font-size:12px" href="' + attr(s.home) + '" target="_blank" rel="noopener">' + esc(hostOf(s.home)) + "</a></td>" +
-        '<td class="hide-m">' + esc(nameOf(tx.stypes, s.stype)) + '</td><td class="hide-m">' + (s.lang === "zh" ? "中文" : "英文") + "</td>" +
-        '<td><span class="st' + (s.ok ? "" : " bad") + '">' + (s.ok ? "正常" : "本次未更新") + "</span></td>" +
+        '<td class="hide-m">' + esc(nameOf(tx.stypes, s.stype)) + "</td>" +
+        '<td class="hide-m src-last">' + (h && h.last ? '<span title="' + attr(absTime(h.last)) + '">' + rel(h.last) + "</span>" : '<span class="muted">—</span>') + "</td>" +
+        '<td class="hide-m">' + spark + "</td>" +
+        '<td><span class="st' + (hv[0] ? " " + hv[0] : "") + '">' + hv[1] + "</span></td>" +
         '<td class="num">' + s.count + "</td>" +
         '<td><button class="link-btn" data-block-src="' + s.id + '">' + (isBlocked ? "取消屏蔽" : "屏蔽") + "</button></td></tr>";
     }).join("") + "</tbody></table>";
