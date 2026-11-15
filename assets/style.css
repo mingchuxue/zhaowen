@@ -435,4 +435,18 @@ html[data-dimread="off"] .card.read h3, html[data-dimread="off"] .card.read .ex 
 .trend .tn.up { color: var(--red); }
 @media (prefers-reduced-motion: reduce) { .trend .spark i { animation: none; } }
 /* 关注词标记 */
-.card mark.fw, .hero mark.fw, .lead mark.fw { background: none; padding: 0; border-radius: 0; box-shadow: inset 0 -.38em 0 color-mix(in srgb, var(--red) 16%, transparent); }
+mark.fw, .card mark.fw { background: none; color: inherit; padding: 0; border-radius: 0; box-shadow: inset 0 -.38em 0 color-mix(in srgb, var(--red) 16%, transparent); }
+/* 阅读统计 */
+.read-stats { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; padding: 16px 0 18px; margin-bottom: 14px; border-bottom: 1px solid var(--rule); }
+.rs-nums { display: flex; gap: 28px; }
+.rs-nums div { display: flex; flex-direction: column; gap: 2px; }
+.rs-nums b { font-family: var(--serif); font-size: 26px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.rs-nums span { font-size: 12px; color: var(--ink-3); }
+.rs-bars { display: flex; align-items: flex-end; gap: 6px; height: 64px; }
+.rs-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; width: 18px; height: 100%; }
+.rs-col i { display: block; width: 100%; background: color-mix(in srgb, var(--red) 70%, transparent); border-radius: 2px 2px 0 0; transform-origin: bottom; animation: m-grow-y .5s cubic-bezier(.22,.8,.24,1) backwards; max-height: calc(100% - 18px); }
+.rs-col i.z { background: var(--rule); }
+.rs-col:last-child i { background: var(--red); }
+.rs-col span { font-size: 11px; color: var(--ink-3); line-height: 14px; }
+@media (max-width: 640px) { .read-stats { flex-direction: column; align-items: stretch; gap: 14px; } .rs-bars { justify-content: space-between; } .rs-col { width: 28px; } }
+@media (prefers-reduced-motion: reduce) { .rs-col i { animation: none; } }

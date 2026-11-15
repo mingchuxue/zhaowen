@@ -335,7 +335,7 @@
       var others = g.all.filter(function (x) { return x.id !== it.id; }).sort(function (a, b) { return ts(a) - ts(b); });
       html += '<div class="cluster"><button type="button" data-act="cluster">' + g.cov + " 家来源报道 · 查看另外 " + others.length + " 篇</button><ul>" +
         others.map(function (x) {
-          return '<li><span class="s">' + esc(srcName(x.src)) + '</span><a href="' + attr(x.url) + '" target="_blank" rel="noopener" data-open="' + x.id + '">' + esc(titleOf(x)) + '</a><time title="' + attr(absTime(ts(x))) + '">' + rel(ts(x)) + "</time></li>";
+          return '<li><span class="s">' + esc(srcName(x.src)) + '</span><a href="' + attr(x.url) + '" target="_blank" rel="noopener" data-open="' + x.id + '">' + hl(titleOf(x)) + '</a><time title="' + attr(absTime(ts(x))) + '">' + rel(ts(x)) + "</time></li>";
         }).join("") + "</ul></div>";
     }
     return html + "</article>";
@@ -414,7 +414,7 @@
       html += '<article class="hero' + (img ? "" : " noimg") + '" data-id="' + it.id + '">' +
         (img ? '<a class="hero-img" href="' + attr(it.url) + '" target="_blank" rel="noopener" tabindex="-1" data-open="' + it.id + '"><img src="' + attr(it.img) + '" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.parentNode.classList.add(\'noimg\');this.parentNode.remove()"></a>' : "") +
         "<div>" + metaHtml(it, hero) +
-        '<h2><a href="' + attr(it.url) + '" target="_blank" rel="noopener" data-open="' + it.id + '">' + esc(titleOf(it)) + "</a></h2>" +
+        '<h2><a href="' + attr(it.url) + '" target="_blank" rel="noopener" data-open="' + it.id + '">' + hl(titleOf(it)) + "</a></h2>" +
         (excerptOf(it) ? '<p class="dek">' + esc(excerptOf(it)) + "</p>" : "") +
         coverageHtml(hero, 7) + "</div></article>";
     }
@@ -422,7 +422,7 @@
       html += '<div class="leads">' + leads.map(function (g) {
         var it = g.it;
         return '<article class="lead" data-id="' + it.id + '"><div>' + metaHtml(it, g) +
-          '<h3><a href="' + attr(it.url) + '" target="_blank" rel="noopener" data-open="' + it.id + '">' + esc(titleOf(it)) + "</a></h3>" +
+          '<h3><a href="' + attr(it.url) + '" target="_blank" rel="noopener" data-open="' + it.id + '">' + hl(titleOf(it)) + "</a></h3>" +
           (excerptOf(it) ? "<p>" + esc(excerptOf(it)) + "</p>" : "") +
           (g.cov > 1 ? '<div class="coverage" style="margin-top:6px"><span class="cov-n">' + g.cov + " 家来源报道</span></div>" : "") +
           "</div>" + imgTag(it) + "</article>";
@@ -448,9 +448,9 @@
       var top = list[0];
       html += '<section class="sec-block" data-k="' + c + '"><h4>' + name + '<button data-sec="' + c + '">更多 →</button></h4>' +
         '<div class="sec-top">' + imgTag(top.it) +
-        '<h5><a href="' + attr(top.it.url) + '" target="_blank" rel="noopener" data-open="' + top.it.id + '">' + esc(titleOf(top.it)) + "</a></h5>" + metaHtml(top.it, top, { brief: true }) + "</div>" +
+        '<h5><a href="' + attr(top.it.url) + '" target="_blank" rel="noopener" data-open="' + top.it.id + '">' + hl(titleOf(top.it)) + "</a></h5>" + metaHtml(top.it, top, { brief: true }) + "</div>" +
         '<ul class="sec-list">' + list.slice(1).map(function (g) {
-          return '<li><a href="' + attr(g.it.url) + '" target="_blank" rel="noopener" data-open="' + g.it.id + '">' + esc(titleOf(g.it)) + "</a>" + metaHtml(g.it, g, { brief: true }) + "</li>";
+          return '<li><a href="' + attr(g.it.url) + '" target="_blank" rel="noopener" data-open="' + g.it.id + '">' + hl(titleOf(g.it)) + "</a>" + metaHtml(g.it, g, { brief: true }) + "</li>";
         }).join("") + "</ul></section>";
     });
     html += "</div></div>";
@@ -458,7 +458,7 @@
     var maxHeat = Math.max(hero ? hero.heat : 0, rank.length ? rank[0].heat : 0) || 1;
     html += '<aside class="side">';
     html += '<div class="side-box"><h3>热度榜<button class="link-btn" data-sort-go="hot">完整榜单</button></h3><ol class="rank">' + rank.map(function (g) {
-      return '<li><a href="' + attr(g.it.url) + '" target="_blank" rel="noopener" data-open="' + g.it.id + '">' + esc(titleOf(g.it)) + "</a>" +
+      return '<li><a href="' + attr(g.it.url) + '" target="_blank" rel="noopener" data-open="' + g.it.id + '">' + hl(titleOf(g.it)) + "</a>" +
         '<div class="meta"><span class="src">' + esc(srcName(g.it.src)) + "</span>" + (g.cov > 1 ? '<span class="dot">' + g.cov + " 家报道</span>" : "") + '<span class="dot">' + rel(g.t) + "</span></div>" +
         '<div class="heat-bar"><i style="width:' + Math.max(8, Math.round(g.heat / maxHeat * 100)) + '%"></i></div></li>';
     }).join("") + "</ol></div>";
@@ -468,7 +468,7 @@
       var fl = S.items.filter(function (it) { return !blocked(it) && followHit(it); }).sort(function (a, b) { return ts(b) - ts(a); }).slice(0, 6);
       html += '<div class="follow-chips">' + follow.map(function (w) { return '<span class="chip">' + esc(followLabel(w)) + "</span>"; }).join("") + "</div>";
       html += fl.length ? '<ul class="mini-list">' + fl.map(function (it) {
-        return '<li><a href="' + attr(it.url) + '" target="_blank" rel="noopener" data-open="' + it.id + '">' + esc(titleOf(it)) + '</a><div class="meta"><span class="src">' + esc(srcName(it.src)) + '</span><span class="dot">' + rel(ts(it)) + "</span></div></li>";
+        return '<li><a href="' + attr(it.url) + '" target="_blank" rel="noopener" data-open="' + it.id + '">' + hl(titleOf(it)) + '</a><div class="meta"><span class="src">' + esc(srcName(it.src)) + '</span><span class="dot">' + rel(ts(it)) + "</span></div></li>";
       }).join("") + '</ul><p style="margin:8px 0 0"><button class="link-btn" data-sec="follow">查看全部关注 →</button></p>' : '<p class="muted" style="font-size:13px">近几天没有相符的新闻。</p>';
     } else {
       html += '<p class="muted" style="font-size:13.5px;margin:0 0 10px">添加关键词或话题，例如“高考”“新能源”“航天”，相关新闻会集中出现在这里。</p><button class="btn" data-act="edit-follow">添加关注</button>';
@@ -676,7 +676,7 @@
       html += '<div class="tl-hour" id="tl-h' + hh + '"><h4>' + pad(hh) + ":00<small>" + arr.length + ' 组</small></h4><div class="tl-items">' + arr.map(function (g) {
         var it = g.it;
         return '<div class="tl-item' + (g.cov >= 3 ? " hot" : "") + '" data-id="' + it.id + '"><div class="meta"><time>' + hm(g.t0) + '</time><a class="src" href="#" data-src="' + it.src + '">' + esc(srcName(it.src)) + "</a>" + (g.cov > 1 ? '<span class="dot cov-n" style="font-size:12px">' + g.cov + " 家来源</span>" : "") + "</div>" +
-          '<h3><a href="' + attr(it.url) + '" target="_blank" rel="noopener" data-open="' + it.id + '">' + esc(titleOf(it)) + "</a></h3></div>";
+          '<h3><a href="' + attr(it.url) + '" target="_blank" rel="noopener" data-open="' + it.id + '">' + hl(titleOf(it)) + "</a></h3></div>";
       }).join("") + "</div></div>";
     });
     html += "</div>";
@@ -711,12 +711,31 @@
     });
     return html + "</ul></div>";
   }
+  function readStats() {
+    var now = Date.now(), days = [], i;
+    for (i = 6; i >= 0; i--) days.push({ k: dayKey(now - i * 86400000), n: 0 });
+    var idx = {};
+    days.forEach(function (d, j) { idx[d.k] = j; });
+    Object.keys(readMap).forEach(function (id) {
+      var t = readMap[id];
+      if (typeof t !== "number") return;
+      var k = dayKey(t * 1000);
+      if (k in idx) days[idx[k]].n++;
+    });
+    var total = days.reduce(function (a, d) { return a + d.n; }, 0), max = Math.max.apply(null, days.map(function (d) { return d.n; })) || 1;
+    var wk = ["日", "一", "二", "三", "四", "五", "六"];
+    return '<div class="read-stats"><div class="rs-nums"><div><b>' + days[6].n + '</b><span>今日已读</span></div><div><b>' + total + '</b><span>近 7 天</span></div><div><b>' + Math.round(total / 7 * 10) / 10 + '</b><span>日均</span></div></div>' +
+      '<div class="rs-bars" aria-label="近 7 天阅读量">' + days.map(function (d, j) {
+        return '<div class="rs-col" title="' + d.k + "：" + d.n + ' 篇"><i style="height:' + Math.max(4, Math.round(d.n / max * 100)) + '%"' + (d.n ? "" : ' class="z"') + '></i><span>' + (j === 6 ? "今" : wk[new Date(d.k + "T12:00:00Z").getUTCDay()]) + "</span></div>";
+      }).join("") + "</div></div>";
+  }
   function renderMine() {
     var el = $("#view-mine");
     var tabs = [["saved", "收藏", Object.keys(saved).length], ["later", "稍后读", Object.keys(later).length], ["hist", "浏览记录", hist.length]];
     var html = '<div class="tabs">' + tabs.map(function (t) {
       return '<button data-tab="' + t[0] + '" aria-pressed="' + (S.tab === t[0]) + '">' + t[1] + '<span class="n">' + t[2] + "</span></button>";
     }).join("") + "</div>";
+    html = readStats() + html;
     var arr = mineList();
     html += '<div class="mine-tools">' + (arr.length ? '<button class="btn" data-act="export-list">复制为文本</button><button class="btn" data-act="export-md">导出 Markdown</button><button class="btn danger" data-act="clear-list">清空</button>' : "") + "</div>";
     if (!arr.length) {
