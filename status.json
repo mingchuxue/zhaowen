@@ -1,13 +1,16 @@
 {
-  "generated": "2026-11-26T05:37:29+08:00",
-  "count": 14714,
-  "clusters": 955,
-  "sources_ok": 110,
+  "generated": "2026-11-27T06:57:07+08:00",
+  "count": 14526,
+  "clusters": 981,
+  "sources_ok": 107,
   "sources": 114,
   "failed": [
     "华尔街日报中文网",
     "卫报",
     "天空体育",
+    "Breaking Defense",
+    "BBC World · 推特",
+    "彭博社 · 推特",
     "NASA · 推特"
   ]
 }
